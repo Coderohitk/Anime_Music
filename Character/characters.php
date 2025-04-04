@@ -1,6 +1,6 @@
 <?php
 
-$conn = new mysqli("localhost", "root", "", "anime");
+include '../reusable/conn.php';
 // Query to fetch all characters
 $sql = "SELECT * FROM characters";
 $result = $conn->query($sql);

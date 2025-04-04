@@ -1,10 +1,5 @@
 <?php
-// Database connection
-$conn = new mysqli("localhost", "root", "", "anime");
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include '../reusable/conn.php';
 
 if (isset($_POST['add'])) {
     $user_id = $_POST['user_id'];

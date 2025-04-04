@@ -16,6 +16,12 @@
           <a class="nav-link" href="./Music/music_list.php">Music</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="./Character/characters.php">Favourits</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="./Favourites/Favourites.php">Character</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link"  href="logout.php">Logout</a>
         </li>
       </ul>
