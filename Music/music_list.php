@@ -23,7 +23,6 @@ $result = $conn->query("SELECT * FROM music");
                 <th>Genre</th>
                 <th>Year</th>
                 <th>Cover</th>
-                <th>Audio</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -35,11 +34,10 @@ $result = $conn->query("SELECT * FROM music");
                 <td><?= $row['album'] ?></td>
                 <td><?= $row['genre'] ?></td>
                 <td><?= $row['release_year'] ?></td>
-                <td><img src="<?= $row['cover_image'] ?>" width="50"></td>
-                <!-- <td><audio controls><source src="<?= $row['audio_file'] ?>" type="audio/mpeg"></audio></td> -->
+                <td><img src="../<?= $row["cover_image"]; ?> "width="50"></td>
                 <td>
                     <a href="edit_music.php?id=<?= $row['music_id'] ?>" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="delete_music.php?id=<?= $row['music_id'] ?>" class="btn btn-danger btn-sm" 
+                    <a href="delete_music.php?id=<?= $row['music_id'] ?>" class="btn btn-danger btn-sm"
                         onclick="return confirm('Are you sure?');">Delete</a>
                 </td>
             </tr>

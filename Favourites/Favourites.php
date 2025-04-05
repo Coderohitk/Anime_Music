@@ -48,7 +48,6 @@ if (isset($_POST['add'])) {
             <th>Actions</th>
         </tr>
         <?php
-     $conn = new mysqli("localhost", "root", "", "anime");
         if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
         $result = $conn->query("SELECT * FROM favorites");
         while ($row = $result->fetch_assoc()) {
