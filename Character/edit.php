@@ -1,61 +1,83 @@
 <?php
-// Database connection
-$conn = new mysqli("localhost", "root", "", "anime");
+// Include database connection
+include '../reusable/conn.php';
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Check if ID is set and is numeric (safe check)
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $character_id = $_GET['id'];
 
-if (isset($_GET['id'])) {
-    // Get the ID from the URL
-    $id = $_GET['id'];
-    
-    // Fetch existing record for editing
-    $sql = "SELECT * FROM characters WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    // Check if record exists
+    // Fetch character details from the database
+    $sql = "SELECT * FROM characters WHERE character_id = $character_id";
+    $result = $conn->query($sql);
+
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
     } else {
-        echo "Record not found.";
+        echo "Character not found.";
         exit();
     }
-    
-    $stmt->close();
+} else {
+    echo "Invalid ID specified.";
+    exit();
 }
 
-// Update record logic
-if (isset($_POST['update'])) {
-    $id = $_POST['id'];
+// Check if form is submitted to update the character
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Get form data
     $name = $_POST['name'];
     $anime_id = $_POST['anime_id'];
     $description = $_POST['description'];
-    $image_url = $_POST['image_url'];
     $voice_actor_english = $_POST['voice_actor_english'];
     $voice_actor_japanese = $_POST['voice_actor_japanese'];
-    
-    // Prepare the UPDATE query
-    $sql = "UPDATE characters SET name = ?, anime_id = ?, description = ?, image_url = ?, voice_actor_english = ?, voice_actor = ? WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sissssi", $name, $anime_id, $description, $image_url, $voice_actor_english, $voice_actor_japanese, $id);
-    
-    // Execute the query and provide feedback
+    $role = $_POST['role']; // New field
+
+    // Handle image upload (if a new image is uploaded)
+    $image = $_FILES['image'];
+    $image_new_name = "";
+    if ($image['error'] == 0) {
+        $image_name = $image['name'];
+        $image_tmp_name = $image['tmp_name'];
+        $image_size = $image['size'];
+
+        // Check file size (max 5MB)
+        if ($image_size <= 5000000) {
+            // Generate unique name for the image
+            $image_new_name = uniqid('', true) . "." . strtolower(pathinfo($image_name, PATHINFO_EXTENSION));
+            $image_destination = "../uploads/" . $image_new_name;
+
+            // Move the uploaded image to the server folder
+            if (!move_uploaded_file($image_tmp_name, $image_destination)) {
+                echo "Error uploading image.";
+                exit();
+            }
+        } else {
+            echo "Image size is too large. Maximum allowed size is 5MB.";
+            exit();
+        }
+    }
+
+    // If no new image is uploaded, retain the previous image URL
+    $image_url = $image_new_name ? $image_destination : $row['image_url'];
+
+    // Update query to modify character details
+    $update_sql = "UPDATE characters SET name = ?, anime_id = ?, description = ?, image_url = ?, voice_actor_english = ?, voice_actor_japanese = ?, role = ? WHERE character_id = ?";
+
+    $stmt = $conn->prepare($update_sql);
+    $stmt->bind_param("sisssssi", $name, $anime_id, $description, $image_url, $voice_actor_english, $voice_actor_japanese, $role, $character_id);
+
     if ($stmt->execute()) {
-        echo "Record updated successfully.";
-        header("Location: characters.php"); // Redirect to the list page
+        echo "Character updated successfully.";
+        header("Location: characters.php"); // Redirect to the character list page
         exit();
     } else {
-        echo "Error updating record: " . $conn->error;
+        echo "Error updating character: " . $conn->error;
     }
-    
+
     $stmt->close();
-    $conn->close();
 }
+
+// Close the database connection
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -68,29 +90,31 @@ if (isset($_POST['update'])) {
 <body>
     <h2>Edit Character</h2>
     
-    <!-- Display the current values in the form -->
-    <form method="POST" action="edit.php">
-        <input type="hidden" name="id" value="<?php echo htmlspecialchars($row['id']); ?>">
-        
+    <!-- Form to edit character details -->
+    <form method="POST" action="edit.php?id=<?php echo $character_id; ?>" enctype="multipart/form-data">
         <label for="name">Name:</label><br>
-        <input type="text" name="name" value="<?php echo htmlspecialchars($row['name']); ?>" required><br><br>
-        
+        <input type="text" name="name" value="<?php echo $row['name']; ?>" required><br><br>
+
         <label for="anime_id">Anime ID:</label><br>
-        <input type="number" name="anime_id" value="<?php echo htmlspecialchars($row['anime_id']); ?>" required><br><br>
-        
+        <input type="number" name="anime_id" value="<?php echo $row['anime_id']; ?>" required><br><br>
+
         <label for="description">Description:</label><br>
-        <textarea name="description" required><?php echo htmlspecialchars($row['description']); ?></textarea><br><br>
-        
-        <label for="image_url">Image URL:</label><br>
-        <input type="url" name="image_url" value="<?php echo htmlspecialchars($row['image_url']); ?>" required><br><br>
-        
+        <textarea name="description" required><?php echo $row['description']; ?></textarea><br><br>
+
+        <label for="image">Image (Leave empty to keep current):</label><br>
+        <input type="file" name="image" accept="image/*"><br><br>
+
         <label for="voice_actor_english">English Voice Actor:</label><br>
-        <input type="text" name="voice_actor_english" value="<?php echo htmlspecialchars($row['voice_actor_english']); ?>" required><br><br>
-        
+        <input type="text" name="voice_actor_english" value="<?php echo $row['voice_actor_english']; ?>" required><br><br>
+
         <label for="voice_actor_japanese">Japanese Voice Actor:</label><br>
-        <input type="text" name="voice_actor_japanese" value="<?php echo htmlspecialchars($row['voice_actor']); ?>" required><br><br>
-        
-        <button type="submit" name="update">Update</button>
+        <input type="text" name="voice_actor_japanese" value="<?php echo $row['voice_actor_japanese']; ?>" required><br><br>
+
+        <!-- New Role Field -->
+        <label for="role">Role:</label><br>
+        <input type="text" name="role" value="<?php echo $row['role']; ?>" required><br><br>
+
+        <button type="submit">Update Character</button>
     </form>
 
     <br>
